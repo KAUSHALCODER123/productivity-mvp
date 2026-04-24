@@ -1,0 +1,26 @@
+{
+  "developers": [
+    { "id": "dev_1", "name": "Jane Developer", "role": "Senior Engineer" },
+    { "id": "dev_2", "name": "Bob Architect", "role": "Backend Lead" }
+  ],
+  "issues": [
+    { "id": "PROD-101", "dev_id": "dev_1", "status": "Done", "created_at": "2024-03-01T10:00:00Z", "in_progress_at": "2024-03-02T09:00:00Z", "done_at": "2024-03-04T17:00:00Z" },
+    { "id": "PROD-102", "dev_id": "dev_1", "status": "Done", "created_at": "2024-03-05T10:00:00Z", "in_progress_at": "2024-03-05T11:00:00Z", "done_at": "2024-03-06T15:00:00Z" },
+    { "id": "PROD-201", "dev_id": "dev_2", "status": "Done", "created_at": "2024-03-02T10:00:00Z", "in_progress_at": "2024-03-03T09:00:00Z", "done_at": "2024-03-10T17:00:00Z" },
+    { "id": "PROD-202", "dev_id": "dev_2", "status": "Done", "created_at": "2024-03-12T10:00:00Z", "in_progress_at": "2024-03-13T11:00:00Z", "done_at": "2024-03-14T15:00:00Z" }
+  ],
+  "pull_requests": [
+    { "id": "PR-501", "issue_id": "PROD-101", "opened_at": "2024-03-04T17:05:00Z", "merged_at": "2024-03-05T09:00:00Z" },
+    { "id": "PR-502", "issue_id": "PROD-102", "opened_at": "2024-03-06T15:10:00Z", "merged_at": "2024-03-07T10:00:00Z" },
+    { "id": "PR-601", "issue_id": "PROD-201", "opened_at": "2024-03-10T17:05:00Z", "merged_at": "2024-03-11T09:00:00Z" },
+    { "id": "PR-602", "issue_id": "PROD-202", "opened_at": "2024-03-14T15:10:00Z", "merged_at": "2024-03-15T10:00:00Z" }
+  ],
+  "deployments": [
+    { "id": "DEP-901", "pr_ids": ["PR-501", "PR-601"], "deployed_at": "2024-03-12T10:00:00Z", "status": "Success" },
+    { "id": "DEP-902", "pr_ids": ["PR-502", "PR-602"], "deployed_at": "2024-03-16T11:00:00Z", "status": "Success" }
+  ],
+
+  "bugs": [
+    { "id": "BUG-001", "issue_id": "PROD-101", "found_at": "2024-03-10T14:00:00Z", "severity": "Medium" }
+  ]
+}
