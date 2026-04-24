@@ -5,7 +5,7 @@ import NarrativePanel from './components/NarrativePanel';
 import ManagerView from './components/ManagerView';
 import SettingsForm from './components/SettingsForm';
 import { generateStory } from './utils/storyEngine';
-import { LayoutDashboard, Settings } from 'lucide-react';
+import { LayoutDashboard, Settings, User } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -23,6 +23,7 @@ const itemVariants = {
 
 function App() {
   const [view, setView] = useState('ic'); 
+  const [selectedDevId, setSelectedDevId] = useState('dev_1');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userProfile, setUserProfile] = useState({
     name: 'Jane Developer',
@@ -36,7 +37,6 @@ function App() {
       setUserProfile(JSON.parse(saved));
     }
 
-    // Fetch data from API
     fetch('http://localhost:3001/api/metrics')
       .then(res => res.json())
       .then(json => setData(json))
@@ -88,8 +88,19 @@ function App() {
       };
     };
 
-    const current = calculateStats('dev_1', '2026-04');
-    const previous = calculateStats('dev_1', '2026-03');
+    // Generate 4-week trend for sparklines
+    const generateTrend = (devId, metricKey) => {
+      // Mock historical weeks since our data is limited
+      return [
+        { week: 'W1', value: Math.random() * 50 },
+        { week: 'W2', value: Math.random() * 60 },
+        { week: 'W3', value: Math.random() * 40 },
+        { week: 'W4', value: Math.random() * 70 }
+      ];
+    };
+
+    const current = calculateStats(selectedDevId, '2026-04');
+    const previous = calculateStats(selectedDevId, '2026-03');
 
     const getTrend = (curr, prev) => {
       if (!prev || prev === 0) return curr > 0 ? 100 : 0;
@@ -114,6 +125,13 @@ function App() {
           bugRate: getTrend(current.bugRate, previous.bugRate),
           deployFreq: getTrend(current.deployFreq, previous.deployFreq),
           prThroughput: getTrend(current.prThroughput, previous.prThroughput)
+        },
+        sparklines: {
+          leadTime: generateTrend(selectedDevId, 'leadTime'),
+          cycleTime: generateTrend(selectedDevId, 'cycleTime'),
+          bugRate: generateTrend(selectedDevId, 'bugRate'),
+          deployFreq: generateTrend(selectedDevId, 'deployFreq'),
+          prThroughput: generateTrend(selectedDevId, 'prThroughput')
         }
       },
       teamMetrics: {
@@ -129,7 +147,7 @@ function App() {
         }
       }
     };
-  }, [data]);
+  }, [data, selectedDevId]);
 
   const storyData = useMemo(() => {
     if (!metricsData) return { story: "Loading metrics...", nextSteps: [] };
@@ -207,20 +225,54 @@ function App() {
       <main>
         {view === 'ic' ? (
           <>
-            <motion.div className="metric-grid" variants={containerVariants}>
-              <motion.div variants={itemVariants}><MetricCard label="Lead Time" value={icMetrics.current.leadTime} unit="hrs" trend={icMetrics.trends.leadTime} badge="cyan" /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="Cycle Time" value={icMetrics.current.cycleTime} unit="hrs" trend={icMetrics.trends.cycleTime} badge="magenta" /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="Bug Rate" value={icMetrics.current.bugRate} unit="%" trend={icMetrics.trends.bugRate} /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="Deploy Freq" value={icMetrics.current.deployFreq} unit="/mo" trend={icMetrics.trends.deployFreq} badge="cyan" /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="PR Throughput" value={icMetrics.current.prThroughput} unit="/mo" trend={icMetrics.trends.prThroughput} /></motion.div>
-            </motion.div>
+            <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <User size={20} color="var(--accent-cyan)" />
+              <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Select Developer:</span>
+              <select 
+                value={selectedDevId} 
+                onChange={(e) => setSelectedDevId(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--card-border)',
+                  color: 'var(--text-primary)',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {data.developers.map(dev => (
+                  <option key={dev.id} value={dev.id} style={{ background: '#0a0a14' }}>{dev.name} ({dev.role})</option>
+                ))}
+              </select>
+            </div>
 
-            <motion.div variants={itemVariants}>
-              <NarrativePanel 
-                story={storyData.story} 
-                nextSteps={storyData.nextSteps} 
-              />
-            </motion.div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
+              <motion.div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }} variants={containerVariants}>
+                <motion.div variants={itemVariants}>
+                  <MetricCard label="Lead Time" value={icMetrics.current.leadTime} unit="hrs" trend={icMetrics.trends.leadTime} thresholdType="leadTime" chartData={icMetrics.sparklines.leadTime} color="var(--accent-cyan)" />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <MetricCard label="Cycle Time" value={icMetrics.current.cycleTime} unit="hrs" trend={icMetrics.trends.cycleTime} thresholdType="cycleTime" chartData={icMetrics.sparklines.cycleTime} color="var(--accent-magenta)" />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <MetricCard label="Bug Rate" value={icMetrics.current.bugRate} unit="%" trend={icMetrics.trends.bugRate} thresholdType="bugRate" chartData={icMetrics.sparklines.bugRate} color="#FFEB3B" />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <MetricCard label="Deploy Freq" value={icMetrics.current.deployFreq} unit="/mo" trend={icMetrics.trends.deployFreq} thresholdType="deployFreq" chartData={icMetrics.sparklines.deployFreq} color="var(--accent-cyan)" />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <MetricCard label="PR Throughput" value={icMetrics.current.prThroughput} unit="/mo" trend={icMetrics.trends.prThroughput} thresholdType="prThroughput" chartData={icMetrics.sparklines.prThroughput} color="var(--accent-magenta)" />
+                </motion.div>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <NarrativePanel 
+                  story={storyData.story} 
+                  nextSteps={storyData.nextSteps} 
+                />
+              </motion.div>
+            </div>
           </>
         ) : (
           <ManagerView 

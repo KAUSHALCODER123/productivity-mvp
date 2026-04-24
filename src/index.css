@@ -141,6 +141,15 @@ h1, h2, h3 {
 }
 
 .badge-cyan { background: var(--glow-cyan); color: var(--accent-cyan); }
+.badge-magenta { background: var(--glow-magenta); color: var(--accent-magenta); }
+
+.badge-yellow { 
+  background: rgba(255, 235, 59, 0.1); 
+  color: #FFEB3B; 
+  border: 1px solid rgba(255, 235, 59, 0.3); 
+  box-shadow: 0 0 10px rgba(255, 235, 59, 0.1); 
+}
+
 .view-switcher {
   display: flex;
   gap: 4px;
@@ -169,4 +178,16 @@ h1, h2, h3 {
 
 table td {
   padding: 16px 0;
+}
+
+.skeleton { 
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%); 
+  background-size: 200% 100%; 
+  animation: skeleton-loading 1.5s infinite; 
+  border-radius: 4px; 
+}
+
+@keyframes skeleton-loading { 
+  0% { background-position: 200% 0; } 
+  100% { background-position: -200% 0; } 
 }
