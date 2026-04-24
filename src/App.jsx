@@ -88,16 +88,16 @@ function App() {
       };
     };
 
-    const current = calculateStats('dev_1', '2024-03');
-    const previous = calculateStats('dev_1', '2024-02');
+    const current = calculateStats('dev_1', '2026-04');
+    const previous = calculateStats('dev_1', '2026-03');
 
     const getTrend = (curr, prev) => {
       if (!prev || prev === 0) return curr > 0 ? 100 : 0;
       return Math.round(((curr - prev) / prev) * 100);
     };
 
-    const teamCurrent = calculateStats(null, '2024-03');
-    const teamPrevious = calculateStats(null, '2024-02');
+    const teamCurrent = calculateStats(null, '2026-04');
+    const teamPrevious = calculateStats(null, '2026-03');
 
     return {
       icMetrics: {
@@ -238,7 +238,7 @@ function App() {
       />
 
       <footer style={{ marginTop: '64px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-        &copy; 2024 DevInsights Productivity Tool • {userProfile.role}
+        &copy; 2026 DevInsights Productivity Tool • {userProfile.role}
       </footer>
     </motion.div>
   );
