@@ -5,30 +5,30 @@ export const generateStory = (metrics) => {
 
   // Logic for the Narrative
   if (parseFloat(leadTime) > parseFloat(cycleTime) * 1.5) {
-    story += `Your Lead Time for Changes (${leadTime}h) is significantly higher than your Cycle Time (${cycleTime}h). This indicates that while you are coding quickly, your work is getting stuck in the PR review or deployment queue. `;
-    nextSteps.push("Identify if PR reviews are taking too long or if the CI/CD pipeline is slow.");
+    story += `Your Lead Time for Changes (${leadTime}h) is significantly higher than your Cycle Time (${cycleTime}h). This indicates that while coding is moving fast, work is getting delayed in the review or deployment pipeline. `;
+    nextSteps.push("Audit the PR review turnaround time to identify bottleneck reviewers.");
   } else {
-    story += `Your delivery pipeline is well-balanced. Lead Time (${leadTime}h) and Cycle Time (${cycleTime}h) are moving in sync, which is a sign of a healthy SDLC. `;
+    story += `Your delivery pipeline is well-balanced. Lead Time (${leadTime}h) and Cycle Time (${cycleTime}h) are closely aligned, showing a smooth transition from code to production. `;
   }
 
-  if (parseFloat(bugRate) > 15) {
-    story += `The current Bug Rate (${bugRate}%) is above the team threshold. We've noticed a pattern of post-release issues that could suggest a need for more robust local testing or unit test coverage. `;
-    nextSteps.push("Review recent bug reports to identify common 'leakage' points in your workflow.");
+  if (parseFloat(bugRate) > 10) {
+    story += `The current Bug Rate (${bugRate}%) is trending above our quality target. This suggests that recent complex changes might need more rigorous regression testing. `;
+    nextSteps.push("Implement automated unit tests for the most frequently regressed modules.");
   } else {
-    story += `Your quality remains high with a Bug Rate of only ${bugRate}%, well below the 10% target. `;
+    story += `Your quality remains excellent with a Bug Rate of only ${bugRate}%, well within the healthy threshold. `;
   }
 
-  if (prThroughput < 5) {
-    story += `PR Throughput is lower than usual this month. This might be due to working on high-complexity tasks or unexpected blockers. `;
-    nextSteps.push("Break down larger Jira tickets into smaller PRs to increase throughput and reduce risk.");
+  if (prThroughput < 3) {
+    story += `PR Throughput (${prThroughput} merged) is currently lower than the team average. This might reflect a focus on higher-complexity architecture tasks. `;
+    nextSteps.push("Break down upcoming feature requests into smaller, manageable sub-tasks.");
   } else {
-    story += `Your throughput is excellent, with ${prThroughput} merged PRs this month. `;
+    story += `Your throughput is strong, with ${prThroughput} PRs successfully merged this month. `;
   }
 
   // Fallback next steps if none generated
   if (nextSteps.length === 0) {
-    nextSteps.push("Maintain current velocity and quality standards.");
-    nextSteps.push("Experiment with a new automation tool to shave off more Lead Time.");
+    nextSteps.push("Continue maintaining current quality and speed benchmarks.");
+    nextSteps.push("Explore CI/CD optimizations to shave more minutes off Lead Time.");
   }
 
   return { story, nextSteps };

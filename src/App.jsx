@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import mockData from './data/mockData.json';
 import MetricCard from './components/MetricCard';
 import NarrativePanel from './components/NarrativePanel';
 import ManagerView from './components/ManagerView';
@@ -29,53 +28,119 @@ function App() {
     name: 'Jane Developer',
     role: 'Senior Engineer'
   });
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('dev_profile');
     if (saved) {
       setUserProfile(JSON.parse(saved));
     }
+
+    // Fetch data from API
+    fetch('http://localhost:3001/api/metrics')
+      .then(res => res.json())
+      .then(json => setData(json))
+      .catch(err => console.error('Failed to fetch data:', err));
   }, []);
 
-  const { icMetrics, teamMetrics } = useMemo(() => {
-    const { issues, pull_requests, deployments, bugs } = mockData;
+  const metricsData = useMemo(() => {
+    if (!data) return null;
 
-    const calculateForDev = (devId) => {
-      const devIssues = issues.filter(i => i.dev_id === devId && i.status === 'Done');
-      const devPrs = pull_requests.filter(pr => devIssues.some(i => i.id === pr.issue_id));
+    const { issues, pull_requests, deployments, bugs } = data;
+
+    const calculateStats = (devId, monthStr) => {
+      const devIssues = issues.filter(i => 
+        (devId ? i.dev_id === devId : true) && 
+        i.status === 'Done' && 
+        i.done_at.includes(monthStr)
+      );
+
+      const devPrs = pull_requests.filter(pr => 
+        devIssues.some(i => i.id === pr.issue_id) && 
+        pr.merged_at.includes(monthStr)
+      );
       
-      const leadTimes = deployments.map(dep => {
-        const prs = devPrs.filter(pr => dep.pr_ids.includes(pr.id));
-        if (prs.length === 0) return null;
-        return (new Date(dep.deployed_at) - new Date(prs[0].opened_at)) / (1000 * 60 * 60);
-      }).filter(t => t !== null);
+      const leadTimes = deployments
+        .filter(d => d.deployed_at.includes(monthStr))
+        .map(dep => {
+          const prs = devPrs.filter(pr => dep.pr_ids.includes(pr.id));
+          if (prs.length === 0) return null;
+          return (new Date(dep.deployed_at) - new Date(prs[0].opened_at)) / (1000 * 60 * 60);
+        }).filter(t => t !== null);
 
       const cycleTimes = devIssues.map(i => (new Date(i.done_at) - new Date(i.in_progress_at)) / (1000 * 60 * 60));
       
+      const completedCount = devIssues.length;
+      const bugCount = bugs.filter(b => 
+        devIssues.some(i => i.id === b.issue_id) && 
+        b.found_at.includes(monthStr)
+      ).length;
+
       return {
-        leadTime: (leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length || 0).toFixed(1),
-        cycleTime: (cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length || 0).toFixed(1),
-        bugRate: ((bugs.filter(b => devIssues.some(i => i.id === b.issue_id)).length / devIssues.length) * 100).toFixed(1),
-        deployFreq: deployments.filter(d => d.pr_ids.some(pid => devPrs.some(p => p.id === pid))).length,
+        leadTime: leadTimes.length ? (leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length) : 0,
+        cycleTime: cycleTimes.length ? (cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length) : 0,
+        bugRate: completedCount ? (bugCount / completedCount) * 100 : 0,
+        deployFreq: deployments.filter(d => 
+          d.deployed_at.includes(monthStr) && 
+          (devId ? d.pr_ids.some(pid => devPrs.some(p => p.id === pid)) : true)
+        ).length,
         prThroughput: devPrs.length
       };
     };
 
-    const allCompletedIssues = issues.filter(i => i.status === 'Done');
-    const teamCycleTimes = allCompletedIssues.map(i => (new Date(i.done_at) - new Date(i.in_progress_at)) / (1000 * 60 * 60));
-    
+    const current = calculateStats('dev_1', '2024-03');
+    const previous = calculateStats('dev_1', '2024-02');
+
+    const getTrend = (curr, prev) => {
+      if (!prev || prev === 0) return curr > 0 ? 100 : 0;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
+
+    const teamCurrent = calculateStats(null, '2024-03');
+    const teamPrevious = calculateStats(null, '2024-02');
+
     return {
-      icMetrics: calculateForDev('dev_1'),
+      icMetrics: {
+        current: {
+          leadTime: current.leadTime.toFixed(1),
+          cycleTime: current.cycleTime.toFixed(1),
+          bugRate: current.bugRate.toFixed(1),
+          deployFreq: current.deployFreq,
+          prThroughput: current.prThroughput
+        },
+        trends: {
+          leadTime: getTrend(current.leadTime, previous.leadTime),
+          cycleTime: getTrend(current.cycleTime, previous.cycleTime),
+          bugRate: getTrend(current.bugRate, previous.bugRate),
+          deployFreq: getTrend(current.deployFreq, previous.deployFreq),
+          prThroughput: getTrend(current.prThroughput, previous.prThroughput)
+        }
+      },
       teamMetrics: {
-        avgLeadTime: 22.4,
-        avgCycleTime: (teamCycleTimes.reduce((a, b) => a + b, 0) / teamCycleTimes.length).toFixed(1),
-        totalThroughput: pull_requests.length,
-        avgBugRate: ((bugs.length / allCompletedIssues.length) * 100).toFixed(1)
+        avgLeadTime: teamCurrent.leadTime.toFixed(1),
+        avgCycleTime: teamCurrent.cycleTime.toFixed(1),
+        totalThroughput: teamCurrent.prThroughput,
+        avgBugRate: teamCurrent.bugRate.toFixed(1),
+        trends: {
+          leadTime: getTrend(teamCurrent.leadTime, teamPrevious.leadTime),
+          cycleTime: getTrend(teamCurrent.cycleTime, teamPrevious.cycleTime),
+          throughput: getTrend(teamCurrent.prThroughput, teamPrevious.prThroughput),
+          bugRate: getTrend(teamCurrent.bugRate, teamPrevious.bugRate)
+        }
       }
     };
-  }, []);
+  }, [data]);
 
-  const storyData = useMemo(() => generateStory(icMetrics), [icMetrics]);
+  const storyData = useMemo(() => {
+    if (!metricsData) return { story: "Loading metrics...", nextSteps: [] };
+    return generateStory(metricsData.icMetrics.current);
+  }, [metricsData]);
+
+  if (!data || !metricsData) {
+    return <div style={{ color: '#fff', padding: '48px', textAlign: 'center' }}>Loading Insight Data...</div>;
+  }
+
+  const { icMetrics, teamMetrics } = metricsData;
 
   return (
     <motion.div 
@@ -143,11 +208,11 @@ function App() {
         {view === 'ic' ? (
           <>
             <motion.div className="metric-grid" variants={containerVariants}>
-              <motion.div variants={itemVariants}><MetricCard label="Lead Time" value={icMetrics.leadTime} unit="hrs" trend={-12} badge="cyan" /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="Cycle Time" value={icMetrics.cycleTime} unit="hrs" trend={5} badge="magenta" /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="Bug Rate" value={icMetrics.bugRate} unit="%" trend={20} /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="Deploy Freq" value={icMetrics.deployFreq} unit="/mo" trend={-10} badge="cyan" /></motion.div>
-              <motion.div variants={itemVariants}><MetricCard label="PR Throughput" value={icMetrics.prThroughput} unit="/mo" trend={15} /></motion.div>
+              <motion.div variants={itemVariants}><MetricCard label="Lead Time" value={icMetrics.current.leadTime} unit="hrs" trend={icMetrics.trends.leadTime} badge="cyan" /></motion.div>
+              <motion.div variants={itemVariants}><MetricCard label="Cycle Time" value={icMetrics.current.cycleTime} unit="hrs" trend={icMetrics.trends.cycleTime} badge="magenta" /></motion.div>
+              <motion.div variants={itemVariants}><MetricCard label="Bug Rate" value={icMetrics.current.bugRate} unit="%" trend={icMetrics.trends.bugRate} /></motion.div>
+              <motion.div variants={itemVariants}><MetricCard label="Deploy Freq" value={icMetrics.current.deployFreq} unit="/mo" trend={icMetrics.trends.deployFreq} badge="cyan" /></motion.div>
+              <motion.div variants={itemVariants}><MetricCard label="PR Throughput" value={icMetrics.current.prThroughput} unit="/mo" trend={icMetrics.trends.prThroughput} /></motion.div>
             </motion.div>
 
             <motion.div variants={itemVariants}>
@@ -160,7 +225,8 @@ function App() {
         ) : (
           <ManagerView 
             teamMetrics={teamMetrics} 
-            developers={mockData.developers} 
+            developers={data.developers} 
+            issues={data.issues}
           />
         )}
       </main>
@@ -179,6 +245,3 @@ function App() {
 }
 
 export default App;
-
-
-
