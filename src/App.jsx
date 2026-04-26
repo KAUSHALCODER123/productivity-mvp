@@ -37,7 +37,7 @@ function App() {
       setUserProfile(JSON.parse(saved));
     }
 
-    fetch('http://localhost:3001/api/metrics')
+    fetch(import.meta.env.PROD ? '/api/metrics' : 'http://localhost:3001/api/metrics')
       .then(res => res.json())
       .then(json => setData(json))
       .catch(err => console.error('Failed to fetch data:', err));

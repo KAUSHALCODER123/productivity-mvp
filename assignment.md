@@ -41,7 +41,7 @@ sheet showing one simple way to calculate the assignment metrics.
 •
 Inspect the source tables and decide which fields you will actually use in your MVP.
 • Pick one focused user journey. Recommended: IC profile -> interpretation -> next steps.
-• Use AI to accelerate research, architecture, coding, debugging, and explanation practice.
+• Use AI to accelerate research, architecture, coding, debuggingwhy on   verecel    it  hows   , and explanation practice.
 • Build the MVP with React.js on the front end and any sensible backend or API approach.
 • Create a Miro board using the free User Journey template.
 • Record a 5-10 minute demo video and show a brief working prototype.
